@@ -1,29 +1,19 @@
-using System;
 using UnityEngine;
+using Logic;
 
 namespace Infrastructure
 {
-    public class GameBootstrapper : MonoBehaviour
+    public class GameBootstrapper : MonoBehaviour, ICoroutineRunner
     {
         private Game _game;
+        public LoadingCurtain Curtain;
 
         private void Awake()
         {
-            _game = new Game();
+            _game = new Game(this, Curtain);
+            _game.StateMachine.Enter<BootstrapState>();
             
             DontDestroyOnLoad(this);
-        }
-
-        // Start is called before the first frame update
-        void Start()
-        {
-        
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-        
         }
     }
 }

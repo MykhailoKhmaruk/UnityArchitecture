@@ -8,7 +8,7 @@ namespace CameraLogic
         public float Distance;
         public float OffsetY;
 
-        [SerializeField] private Transform _following;
+        private Transform _following;
 
         private void LateUpdate()
         {
@@ -28,7 +28,6 @@ namespace CameraLogic
 
         private Vector3 FollowingPointPosition()
         {
-
             Vector3 followingPosition = _following.position;
             followingPosition.y += OffsetY;
 
