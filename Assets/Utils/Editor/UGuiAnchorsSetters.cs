@@ -3,7 +3,7 @@ using UnityEditor;
 
 namespace Utils.Editor
 {
-    public static class UGuiTools
+    public static class UGuiAnchorsSetters
     {
         [MenuItem("Tools/RT_UGUI/Anchors to Corners &[")]
         private static void AnchorsToCorners()
@@ -61,7 +61,7 @@ namespace Utils.Editor
         private static void MirrorHorizontallyAroundAnchors() =>
             MirrorHorizontally(false);
 
-        [MenuItem("Tools/RT_UGUI/Mirror Horizontally Around Parent Center &:")]
+        [MenuItem("Tools/RT_UGUI/Mirror Horizontally Around Parent Center &.")]
         private static void MirrorHorizontallyAroundParent() =>
             MirrorHorizontally(true);
 
@@ -102,7 +102,7 @@ namespace Utils.Editor
         private static void MirrorVerticallyAroundAnchors() =>
             MirrorVertically(false);
 
-        [MenuItem("Tools/RT_UGUI/Mirror Vertically Around Parent Center &\"")]
+        [MenuItem("Tools/RT_UGUI/Mirror Vertically Around Parent Center &/")]
         private static void MirrorVerticallyAroundParent() =>
             MirrorVertically(true);
 
