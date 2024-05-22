@@ -14,14 +14,15 @@ namespace EditorUtils
         private int _height = 1080;
         private string _screenshotName = "screenshot";
         private string _folderPath = "Screenshots";
+        private bool _useNumber = false;
         private int _numberOfScreenShot = 0;
         private static bool _isLandScape = false;
-        
-        private float _delaySeconds = 2f; 
 
-        private List<string>  _listOfNames = new List<string>();
+        private float _delaySeconds = 2f;
+
+        private List<string> _listOfNames = new List<string>();
         private string _newName = string.Empty;
-        
+
         static bool useRezolution = true;
 
         static object s_ScreenshotsTool_instance;
@@ -32,10 +33,15 @@ namespace EditorUtils
 
         static ScreenshotsTool()
         {
-            s_GameViewType = typeof( Editor ).Assembly.GetType( "UnityEditor.GameView" );
-            s_GameView_SizeSelectionCallback = s_GameViewType.GetMethod( "SizeSelectionCallback", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
-            s_GameViewSizesType = typeof( Editor ).Assembly.GetType( "UnityEditor.GameViewSizes" );
-            s_GameViewSizes_GetGroup = s_GameViewSizesType.GetMethod( "GetGroup" );
+            s_GameViewType = typeof(Editor).Assembly.GetType("UnityEditor.GameView");
+            s_GameView_SizeSelectionCallback = s_GameViewType.GetMethod("SizeSelectionCallback",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            s_GameViewSizesType = typeof(Editor).Assembly.GetType("UnityEditor.GameViewSizes");
+            s_GameViewSizes_GetGroup = s_GameViewSizesType.GetMethod("GetGroup");
+
+            var gameViewSizesType = typeof(Editor).Assembly.GetType("UnityEditor.ScriptableSingleton`1").MakeGenericType(s_GameViewSizesType);
+            var instanceProperty = gameViewSizesType.GetProperty("instance");
+            s_ScreenshotsTool_instance = instanceProperty.GetValue(null);
         }
 
         [MenuItem("Tools/ScreenshotsTool")]
@@ -46,51 +52,65 @@ namespace EditorUtils
 
         private void OnGUI()
         {
-            EditorGUI.DrawRect(new Rect(0, 0, position.width, position.height), new Color(5/255f,10/255f,10/255f));
-            useRezolution = EditorGUILayout.BeginToggleGroup ("Use resolution", useRezolution);
-            
+            EditorGUI.DrawRect(new Rect(0, 0, position.width, position.height),
+                new Color(5 / 255f, 10 / 255f, 10 / 255f));
+
+            #region ToggleGroup
+
+            EditorGUILayout.Space(10);
+            useRezolution = EditorGUILayout.BeginToggleGroup("Use resolution", useRezolution);
+            EditorGUILayout.Space(10);
             GUILayout.Label("Screenshot Settings", EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
             _width = EditorGUILayout.IntField("Width", _width);
             _height = EditorGUILayout.IntField("Height", _height);
             EditorGUILayout.Space(5);
+
+#if UNITY_ANDROID
             _isLandScape = EditorGUILayout.Toggle("IsLandScape", _isLandScape);
-            
+#endif            
             EditorGUILayout.Space(10);
             _screenshotName = EditorGUILayout.TextField("Screenshot Name", _screenshotName);
             EditorGUILayout.Space(5);
             _folderPath = EditorGUILayout.TextField("Folder Path", _folderPath);
             EditorGUILayout.Space(5);
+            _useNumber = EditorGUILayout.BeginToggleGroup("USE PREFIX NUMBER?", _useNumber);
             _numberOfScreenShot = EditorGUILayout.IntField("PREFIX Number", _numberOfScreenShot);
+            EditorGUILayout.EndToggleGroup();
             EditorGUILayout.Space(10);
 
             EditorGUILayout.BeginHorizontal();
-            GUILayout.Space(5); 
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("Take Screenshot", GUILayout.Width(200),GUILayout.Height(30)))
+            if (GUILayout.Button("Take Screenshot", GUILayout.Width(200), GUILayout.Height(30)))
             {
                 TakeScreenshot();
             }
             GUILayout.FlexibleSpace();
-            GUILayout.Space(5); 
             EditorGUILayout.EndHorizontal();
-            
-            EditorGUILayout.EndToggleGroup ();
-            
+
+            EditorGUILayout.EndToggleGroup();
+
+            #endregion
+
             EditorGUILayout.Space(10);
-            useRezolution = !EditorGUILayout.BeginToggleGroup ("Use names of resolution", !useRezolution);
+
+            #region ToggleGroup2
+
+            useRezolution = !EditorGUILayout.BeginToggleGroup("Use names of resolution", !useRezolution);
+            EditorGUILayout.Space(5);
+            
+            EditorGUILayout.Space(5);
+            _useNumber = EditorGUILayout.BeginToggleGroup("USE PREFIX NUMBER?", _useNumber);
+            _numberOfScreenShot = EditorGUILayout.IntField("PREFIX Number", _numberOfScreenShot);
+            EditorGUILayout.EndToggleGroup();
             EditorGUILayout.Space(5);
 
-            
-            EditorGUILayout.Space(5);
-            _numberOfScreenShot = EditorGUILayout.IntField("PREFIX Number ", _numberOfScreenShot);
-            EditorGUILayout.Space(5);
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
             GUILayout.Label("List of Names", EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
-            
+
             for (int i = 0; i < _listOfNames.Count; i++)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -109,42 +129,41 @@ namespace EditorUtils
             GUILayout.Label("Add New Name of your resolution Here", EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
-            
+
             _newName = EditorGUILayout.TextField("New Name", _newName);
 
             if (GUILayout.Button("Add"))
             {
                 if (!string.IsNullOrEmpty(_newName))
                 {
-                    if (_listOfNames.Contains(_newName))
+                    if (!_listOfNames.Contains(_newName))
                     {
-                        Debug.Log("The same name already present");
-                        return;
+                        _listOfNames.Add(_newName);
+                        _newName = string.Empty;
                     }
-
-                    _listOfNames.Add(_newName);
-                    _newName = string.Empty; // Clear the input field after adding
+                    else
+                    {
+                        Debug.LogWarning("The same name already present");
+                    }
                 }
             }
+
             EditorGUILayout.Space(5);
-            _delaySeconds = EditorGUILayout.FloatField("Delay between resolution change", _delaySeconds);
+            _delaySeconds = EditorGUILayout.FloatField("Delay", _delaySeconds);
             EditorGUILayout.Space(10);
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("Make Screenshots for all resolution in this List",
-                    GUILayout.Width(400),GUILayout.Height(30)))
+            if (GUILayout.Button("TAKE SCREENSHOTS FOR ALL RESOLUTION IN THIS LIST", 
+                    GUILayout.Width(400), GUILayout.Height(30)))
             {
                 EditorCoroutineUtility.StartCoroutine(TakeScreenshotsWithDelay(), this);
-                // foreach (var name in _listOfNames)
-                // {
-                //     TakeScreenshot(name);
-                // }
             }
-            
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
-            EditorGUILayout.EndToggleGroup ();
+            EditorGUILayout.EndToggleGroup();
+
+            #endregion
         }
 
         private void TakeScreenshot()
@@ -155,25 +174,27 @@ namespace EditorUtils
                 System.IO.Directory.CreateDirectory(_folderPath);
             }
 
-            Screen.SetResolution(_width, _height, false);
-
-            string filePath = System.IO.Path.Combine(_folderPath, 
-                $"{_numberOfScreenShot}_{_screenshotName}_{_width}x{_height}.png");
+            // Screen.SetResolution(_width, _height, false);
+            var prefNum = _useNumber ? _numberOfScreenShot.ToString()+"_" : "";
+            
+            string filePath = System.IO.Path.Combine(_folderPath,
+                $"{prefNum}{_screenshotName}_{_width}x{_height}.png");
             _numberOfScreenShot += 1;
             ScreenCapture.CaptureScreenshot(filePath);
 
             Debug.Log($"Screenshot taken and saved to: {filePath}");
         }
-        
+
         private IEnumerator TakeScreenshotsWithDelay()
         {
-            foreach (var name in _listOfNames)
+            var namesCopy = new List<string>(_listOfNames);
+            foreach (var name in namesCopy)
             {
                 TakeScreenshot(name);
                 yield return new EditorWaitForSeconds(_delaySeconds);
             }
         }
-        
+
         private void TakeScreenshot(string nameOfView)
         {
             SwitchToResolution(nameOfView);
@@ -182,9 +203,9 @@ namespace EditorUtils
                 System.IO.Directory.CreateDirectory(_folderPath);
             }
 
-            Screen.SetResolution(_width, _height, false);
+            // Screen.SetResolution(_width, _height, false);
 
-            string filePath = System.IO.Path.Combine(_folderPath, 
+            string filePath = System.IO.Path.Combine(_folderPath,
                 $"{_numberOfScreenShot}_{_screenshotName}_{nameOfView}.png");
             _numberOfScreenShot += 1;
             ScreenCapture.CaptureScreenshot(filePath);
@@ -192,15 +213,14 @@ namespace EditorUtils
             Debug.Log($"Screenshot taken and saved to: {filePath}");
         }
 
-        // ReSharper disable Unity.PerformanceAnalysis
         static void SetGameViewSize(int width, int height)
         {
             SwitchToResolution(width, height);
         }
-        
+
         static void SwitchToResolution(string nameOfResolution)
         {
-            switch( ScreenshotsTool.GetCurrentGroupType( ) )
+            switch (ScreenshotsTool.GetCurrentGroupType())
             {
                 default:
                     ScreenshotsTool.TrySetSize(nameOfResolution);
@@ -216,8 +236,8 @@ namespace EditorUtils
 
         static void SwitchToResolution(int width, int height)
         {
-            string value = width + "x" +height;
-            switch( ScreenshotsTool.GetCurrentGroupType( ) )
+            string value = width + "x" + height;
+            switch (ScreenshotsTool.GetCurrentGroupType())
             {
                 default:
                     ScreenshotsTool.TrySetSize(value);
@@ -231,13 +251,13 @@ namespace EditorUtils
             }
         }
 
-        private static bool TrySetSize( string sizeText )
+        private static bool TrySetSize(string sizeText)
         {
-            GameViewSizeGroupType currentGroup = GetCurrentGroupType( );
-            int foundIndex = FindSize( currentGroup, sizeText );
-            if( foundIndex < 0 )
+            GameViewSizeGroupType currentGroup = GetCurrentGroupType();
+            var foundIndex = FindSize(currentGroup, sizeText);
+            if (foundIndex < 0)
             {
-                UnityEngine.Debug.LogError( $"Size {sizeText} was not found in game view settings" );
+                Debug.LogError($"Size {sizeText} was not found in game view settings");
                 return false;
             }
 
@@ -245,17 +265,17 @@ namespace EditorUtils
             return true;
         }
 
-        private static void SetSizeIndex( int index )
+        private static void SetSizeIndex(int index)
         {
             EditorWindow currentWindow = focusedWindow;
 
-            EditorWindow gv = EditorWindow.GetWindow( s_GameViewType );
-            s_GameView_SizeSelectionCallback.Invoke( gv, new object[] { index, null } );
+            EditorWindow gv = EditorWindow.GetWindow(s_GameViewType);
+            s_GameView_SizeSelectionCallback.Invoke(gv, new object[] { index, null });
 
-            if( currentWindow != null )
-                currentWindow.Focus( );
+            if (currentWindow != null)
+                currentWindow.Focus();
         }
-        
+
         private static int FindSize(GameViewSizeGroupType sizeGroupType, string text)
         {
             var group = GetGroup(sizeGroupType);
@@ -279,12 +299,12 @@ namespace EditorUtils
             return -1;
         }
 
-        static object GetGroup( GameViewSizeGroupType type )
+        static object GetGroup(GameViewSizeGroupType type)
         {
-            return s_GameViewSizes_GetGroup.Invoke( s_ScreenshotsTool_instance, new object[] { (int)type } );
+            return s_GameViewSizes_GetGroup.Invoke(s_ScreenshotsTool_instance, new object[] { (int)type });
         }
 
-        public static GameViewSizeGroupType GetCurrentGroupType()
+        private static GameViewSizeGroupType GetCurrentGroupType()
         {
 #if UNITY_STANDALONE
             return GameViewSizeGroupType.Standalone;
@@ -293,14 +313,7 @@ namespace EditorUtils
 #elif UNITY_IOS
             return GameViewSizeGroupType.iOS;
 #endif
-            //YOU CAN ADD 
+            //YOU CAN ADD MORE PLATFORMS HERE
         }
-    }
-
-    [Serializable]
-    public struct ResolutionsStruct
-    {
-        public int width;
-        public int height;
     }
 }
