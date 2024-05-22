@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using Unity.EditorCoroutines.Editor; // Підключаємо EditorCoroutines
 
-namespace MykhailoUtils
+namespace EditorUtils
 {
     public class ScreenshotsTool : EditorWindow
     {
@@ -14,33 +16,27 @@ namespace MykhailoUtils
         private string _folderPath = "Screenshots";
         private int _numberOfScreenShot = 0;
         private static bool _isLandScape = false;
-
-        private string _listOfNames = "";
-        private bool _useListOfNames = false;
         
-        static object s_ScreenshotsTool_instance;
+        private float _delaySeconds = 2f; 
 
+        private List<string>  _listOfNames = new List<string>();
+        private string _newName = string.Empty;
+        
+        static bool useRezolution = true;
+
+        static object s_ScreenshotsTool_instance;
         static Type s_GameViewType;
         static MethodInfo s_GameView_SizeSelectionCallback;
-
         static Type s_GameViewSizesType;
         static MethodInfo s_GameViewSizes_GetGroup;
 
-        static Type s_GameViewSizeSingleType;
-
-        static ScreenshotsTool( )
+        static ScreenshotsTool()
         {
-            s_GameViewType = typeof( UnityEditor.Editor ).Assembly.GetType( "UnityEditor.GameView" );
+            s_GameViewType = typeof( Editor ).Assembly.GetType( "UnityEditor.GameView" );
             s_GameView_SizeSelectionCallback = s_GameViewType.GetMethod( "SizeSelectionCallback", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
-            s_GameViewSizesType = typeof( UnityEditor.Editor ).Assembly.GetType( "UnityEditor.GameViewSizes" );
-            s_GameViewSizeSingleType = typeof( ScriptableSingleton<> ).MakeGenericType( s_GameViewSizesType );
+            s_GameViewSizesType = typeof( Editor ).Assembly.GetType( "UnityEditor.GameViewSizes" );
             s_GameViewSizes_GetGroup = s_GameViewSizesType.GetMethod( "GetGroup" );
-
-            var instanceProp = s_GameViewSizeSingleType.GetProperty("instance");
-            s_ScreenshotsTool_instance = instanceProp.GetValue( null, null );
         }
-        
-
 
         [MenuItem("Tools/ScreenshotsTool")]
         public static void ShowWindow()
@@ -48,42 +44,110 @@ namespace MykhailoUtils
             GetWindow<ScreenshotsTool>("ScreenshotsTool");
         }
 
-        void OnGUI()
+        private void OnGUI()
         {
+            EditorGUI.DrawRect(new Rect(0, 0, position.width, position.height), new Color(5/255f,10/255f,10/255f));
+            useRezolution = EditorGUILayout.BeginToggleGroup ("Use resolution", useRezolution);
+            
             GUILayout.Label("Screenshot Settings", EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
             _width = EditorGUILayout.IntField("Width", _width);
             _height = EditorGUILayout.IntField("Height", _height);
+            EditorGUILayout.Space(5);
             _isLandScape = EditorGUILayout.Toggle("IsLandScape", _isLandScape);
-            
             
             EditorGUILayout.Space(10);
             _screenshotName = EditorGUILayout.TextField("Screenshot Name", _screenshotName);
             EditorGUILayout.Space(5);
             _folderPath = EditorGUILayout.TextField("Folder Path", _folderPath);
             EditorGUILayout.Space(5);
-            _numberOfScreenShot = EditorGUILayout.IntField("Number Of ScreenShot", _numberOfScreenShot);
+            _numberOfScreenShot = EditorGUILayout.IntField("PREFIX Number", _numberOfScreenShot);
             EditorGUILayout.Space(10);
 
-            if (GUILayout.Button("Take Screenshot"))
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(5); 
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Take Screenshot", GUILayout.Width(200),GUILayout.Height(30)))
             {
                 TakeScreenshot();
             }
+            GUILayout.FlexibleSpace();
+            GUILayout.Space(5); 
+            EditorGUILayout.EndHorizontal();
+            
+            EditorGUILayout.EndToggleGroup ();
             
             EditorGUILayout.Space(10);
-            
-            _isLandScape = EditorGUILayout.Toggle("Use List of Names", _useListOfNames);
-            EditorGUILayout.Space(5);
-            _listOfNames = EditorGUILayout.TextField("List of Names", _listOfNames);
+            useRezolution = !EditorGUILayout.BeginToggleGroup ("Use names of resolution", !useRezolution);
             EditorGUILayout.Space(5);
 
-            if (GUILayout.Button("Make Screenshots for all resolution in this List"))
+            
+            EditorGUILayout.Space(5);
+            _numberOfScreenShot = EditorGUILayout.IntField("PREFIX Number ", _numberOfScreenShot);
+            EditorGUILayout.Space(5);
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.Label("List of Names", EditorStyles.boldLabel);
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+            
+            for (int i = 0; i < _listOfNames.Count; i++)
             {
-                TakeScreenshot();
+                EditorGUILayout.BeginHorizontal();
+                _listOfNames[i] = EditorGUILayout.TextField(_listOfNames[i]);
+                if (GUILayout.Button("Remove"))
+                {
+                    _listOfNames.RemoveAt(i);
+                }
+                EditorGUILayout.EndHorizontal();
             }
+
+            GUILayout.Space(10);
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.Label("Add New Name of your resolution Here", EditorStyles.boldLabel);
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+            
+            _newName = EditorGUILayout.TextField("New Name", _newName);
+
+            if (GUILayout.Button("Add"))
+            {
+                if (!string.IsNullOrEmpty(_newName))
+                {
+                    if (_listOfNames.Contains(_newName))
+                    {
+                        Debug.Log("The same name already present");
+                        return;
+                    }
+
+                    _listOfNames.Add(_newName);
+                    _newName = string.Empty; // Clear the input field after adding
+                }
+            }
+            EditorGUILayout.Space(5);
+            _delaySeconds = EditorGUILayout.FloatField("Delay between resolution change", _delaySeconds);
+            EditorGUILayout.Space(10);
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Make Screenshots for all resolution in this List",
+                    GUILayout.Width(400),GUILayout.Height(30)))
+            {
+                EditorCoroutineUtility.StartCoroutine(TakeScreenshotsWithDelay(), this);
+                // foreach (var name in _listOfNames)
+                // {
+                //     TakeScreenshot(name);
+                // }
+            }
+            
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndToggleGroup ();
         }
 
-        void TakeScreenshot()
+        private void TakeScreenshot()
         {
             SetGameViewSize(_width, _height);
             if (!System.IO.Directory.Exists(_folderPath))
@@ -93,17 +157,61 @@ namespace MykhailoUtils
 
             Screen.SetResolution(_width, _height, false);
 
-            //TODO Додати довання цифр до скріншотів
-            string filePath = System.IO.Path.Combine(_folderPath, $"{_numberOfScreenShot}_{_screenshotName}_{_width}x{_height}.png");
+            string filePath = System.IO.Path.Combine(_folderPath, 
+                $"{_numberOfScreenShot}_{_screenshotName}_{_width}x{_height}.png");
+            _numberOfScreenShot += 1;
+            ScreenCapture.CaptureScreenshot(filePath);
+
+            Debug.Log($"Screenshot taken and saved to: {filePath}");
+        }
+        
+        private IEnumerator TakeScreenshotsWithDelay()
+        {
+            foreach (var name in _listOfNames)
+            {
+                TakeScreenshot(name);
+                yield return new EditorWaitForSeconds(_delaySeconds);
+            }
+        }
+        
+        private void TakeScreenshot(string nameOfView)
+        {
+            SwitchToResolution(nameOfView);
+            if (!System.IO.Directory.Exists(_folderPath))
+            {
+                System.IO.Directory.CreateDirectory(_folderPath);
+            }
+
+            Screen.SetResolution(_width, _height, false);
+
+            string filePath = System.IO.Path.Combine(_folderPath, 
+                $"{_numberOfScreenShot}_{_screenshotName}_{nameOfView}.png");
             _numberOfScreenShot += 1;
             ScreenCapture.CaptureScreenshot(filePath);
 
             Debug.Log($"Screenshot taken and saved to: {filePath}");
         }
 
-        void SetGameViewSize(int width, int height)
+        // ReSharper disable Unity.PerformanceAnalysis
+        static void SetGameViewSize(int width, int height)
         {
             SwitchToResolution(width, height);
+        }
+        
+        static void SwitchToResolution(string nameOfResolution)
+        {
+            switch( ScreenshotsTool.GetCurrentGroupType( ) )
+            {
+                default:
+                    ScreenshotsTool.TrySetSize(nameOfResolution);
+                    break;
+                case GameViewSizeGroupType.Android:
+                    ScreenshotsTool.TrySetSize(nameOfResolution);
+                    break;
+                case GameViewSizeGroupType.iOS:
+                    ScreenshotsTool.TrySetSize(nameOfResolution);
+                    break;
+            }
         }
 
         static void SwitchToResolution(int width, int height)
@@ -122,8 +230,8 @@ namespace MykhailoUtils
                     break;
             }
         }
-        
-        public static bool TrySetSize( string sizeText )
+
+        private static bool TrySetSize( string sizeText )
         {
             GameViewSizeGroupType currentGroup = GetCurrentGroupType( );
             int foundIndex = FindSize( currentGroup, sizeText );
@@ -136,17 +244,14 @@ namespace MykhailoUtils
             SetSizeIndex(foundIndex);
             return true;
         }
-        
-        public static void SetSizeIndex( int index )
+
+        private static void SetSizeIndex( int index )
         {
-            EditorWindow currentWindow = EditorWindow.focusedWindow;
-            SceneView lastSceneView = SceneView.lastActiveSceneView;
+            EditorWindow currentWindow = focusedWindow;
 
             EditorWindow gv = EditorWindow.GetWindow( s_GameViewType );
             s_GameView_SizeSelectionCallback.Invoke( gv, new object[] { index, null } );
 
-            // if( lastSceneView != null )
-            //     lastSceneView.Focus( );
             if( currentWindow != null )
                 currentWindow.Focus( );
         }
@@ -155,28 +260,20 @@ namespace MykhailoUtils
         {
             var group = GetGroup(sizeGroupType);
             var getDisplayTexts = group.GetType().GetMethod("GetDisplayTexts");
-            var displayTexts = getDisplayTexts.Invoke(group, null) as string[];
+            if (getDisplayTexts == null) return -1;
+            if (getDisplayTexts.Invoke(group, null) is not string[] displayTexts) return -1;
             for (int i = 0; i < displayTexts.Length; i++)
             {
                 string display = displayTexts[i];
-                // int pren = display.IndexOf('(');
-                // if (pren != -1)
-                //     display = display.Substring(0,
-                //         pren - 1); 
-                // -1 to remove the space that’s before the prens. This is very implementation-depdenent
-                // if (display == text)
-                if (display.Contains(text))
-                {
-                    if (_isLandScape)
-                    {
-                        if ((i + 1) < displayTexts.Length)
-                        {
-                            return ++i;
-                        }
-                    }
 
-                    return i;
+                if (!display.Contains(text)) continue;
+                if (!_isLandScape) return i;
+                if ((i + 1) < displayTexts.Length)
+                {
+                    return ++i;
                 }
+
+                return i;
             }
 
             return -1;
