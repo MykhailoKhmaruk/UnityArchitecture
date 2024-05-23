@@ -52,7 +52,7 @@ public class PSDLayersExporter : EditorWindow
                 {
                     psd = new PsdFile(path, Encoding.Default);
                     _fileName = Path.GetFileNameWithoutExtension(path);
-                    _gameObjectName = _fileName;
+                    _atlasName = _gameObjectName = _fileName;
                 }
                 else
                 {
@@ -182,7 +182,7 @@ public class PSDLayersExporter : EditorWindow
         List<SpriteRenderer> spriteRenderers = new List<SpriteRenderer>();
 
         int zOrder = 0;
-        GameObject root = new GameObject(_gameObjectName);
+        GameObject root = new GameObject(_atlasName);
         foreach (var layer in psd.Layers)
         {
             if (layer.Visible && layer.Rect.width > 0 && layer.Rect.height > 0 && !layer.Name.StartsWith("mask_"))
@@ -224,8 +224,7 @@ public class PSDLayersExporter : EditorWindow
 
         // Need to load the image first
         string assetPath = AssetDatabase.GetAssetPath(_psdFile);
-        string path = Path.Combine(Path.GetDirectoryName(assetPath),
-            Path.GetFileNameWithoutExtension(assetPath) + "_atlas" + ".png");
+        string path = Path.Combine(Path.GetDirectoryName(assetPath), _atlasName + "_atlas.png");
 
         byte[] buf = atlas.EncodeToPNG();
         File.WriteAllBytes(path, buf);
