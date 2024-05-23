@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
-using Unity.EditorCoroutines.Editor; // Підключаємо EditorCoroutines
+using Unity.EditorCoroutines.Editor; // Pідключаємо EditorCoroutines
 
 namespace EditorUtils
 {
@@ -31,7 +31,7 @@ namespace EditorUtils
         static Type s_GameViewSizesType;
         static MethodInfo s_GameViewSizes_GetGroup;
 
-        static ScreenshotsTool()
+        private void OnEnable()
         {
             s_GameViewType = typeof(Editor).Assembly.GetType("UnityEditor.GameView");
             s_GameView_SizeSelectionCallback = s_GameViewType.GetMethod("SizeSelectionCallback",
@@ -174,8 +174,7 @@ namespace EditorUtils
                 System.IO.Directory.CreateDirectory(_folderPath);
             }
 
-            // Screen.SetResolution(_width, _height, false);
-            var prefNum = _useNumber ? _numberOfScreenShot.ToString()+"_" : "";
+            var prefNum = _useNumber ? _numberOfScreenShot.ToString() + "_" : "";
             
             string filePath = System.IO.Path.Combine(_folderPath,
                 $"{prefNum}{_screenshotName}_{_width}x{_height}.png");
@@ -202,8 +201,6 @@ namespace EditorUtils
             {
                 System.IO.Directory.CreateDirectory(_folderPath);
             }
-
-            // Screen.SetResolution(_width, _height, false);
 
             string filePath = System.IO.Path.Combine(_folderPath,
                 $"{_numberOfScreenShot}_{_screenshotName}_{nameOfView}.png");
