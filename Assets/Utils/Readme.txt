@@ -1,82 +1,93 @@
-UGUI Anchors Setters
-UGUI Anchors Setters is a Unity Editor utility designed to simplify the manipulation of RectTransform anchors and offsets in Unity's UI system. This tool provides several useful commands for adjusting anchors and offsets, as well as mirroring UI elements horizontally and vertically.
+# ScreenshotsTool
 
-Features
-Anchors to Corners: Adjusts the anchors of the selected RectTransforms to match their corners.
-Corners to Anchors: Adjusts the corners of the selected RectTransforms to match their anchors.
-Mirror Horizontally Around Anchors: Mirrors the selected RectTransforms horizontally around their anchors.
-Mirror Horizontally Around Parent Center: Mirrors the selected RectTransforms horizontally around the center of their parent.
-Mirror Vertically Around Anchors: Mirrors the selected RectTransforms vertically around their anchors.
-Mirror Vertically Around Parent Center: Mirrors the selected RectTransforms vertically around the center of their parent.
-Installation
-Download the UGuiTools.cs script and place it in your project's Editor folder.
-Usage
-The utility adds new menu items under the Tools/RT_UGUI menu in the Unity Editor:
+This Unity Editor tool allows you to take screenshots of your game view with customizable settings. 
+It supports capturing screenshots at specified resolutions, adding prefixes to filenames, and taking multiple screenshots with delays.
 
-Anchors to Corners: &[
-Corners to Anchors: &]
-Mirror Horizontally Around Anchors: &;
-Mirror Horizontally Around Parent Center: &.
-Mirror Vertically Around Anchors: &'
-Mirror Vertically Around Parent Center: &/
-To use these tools, select one or more UI elements in the hierarchy and choose the desired command from the Tools/RT_UGUI menu.
+## Features
 
-Detailed Functionality
-Anchors to Corners
-Adjusts the anchors of the selected RectTransforms to match their current corner positions.
+- Set custom resolution for screenshots
+- Specify custom filename and folder path
+- Option to add prefix numbers to filenames
+- Toggle between landscape and portrait orientation (for Android)
+- Batch screenshot capturing with delays
+- Add and manage custom resolutions
 
-C#
-[MenuItem("Tools/RT_UGUI/Anchors to Corners &[")]
-private static void AnchorsToCorners()
-{
-    // Implementation
-}
-Corners to Anchors
-Resets the offsets of the selected RectTransforms to zero, effectively making the corners match the anchors.
+## Installation
 
-C#
-[MenuItem("Tools/RT_UGUI/Corners to Anchors &]")]
-private static void CornersToAnchors()
-{
-    // Implementation
-}
-Mirror Horizontally Around Anchors
-Mirrors the selected RectTransforms horizontally around their anchors.
+1. Copy the `ScreenshotsTool` script into your Unity project (preferably in an `Editor` folder).
+2. Ensure you have the **Unity Editor Coroutines** package installed. You can install it via the Package Manager:
+   - Open the Package Manager (`Window > Package Manager`).
+   - Click the "+" button and select "Add package from git URL...".
+   - Enter `com.unity.editorcoroutines` and click "Add".
 
-C#
-[MenuItem("Tools/RT_UGUI/Mirror Horizontally Around Anchors &;")]
-private static void MirrorHorizontallyAroundAnchors()
-{
-    MirrorHorizontally(false);
-}
-Mirror Horizontally Around Parent Center
-Mirrors the selected RectTransforms horizontally around the center of their parent RectTransform.
+3. Open Unity and go to the `Tools` menu. Select `ScreenshotsTool` to open the tool window.
 
-C#
-[MenuItem("Tools/RT_UGUI/Mirror Horizontally Around Parent Center &.")]
-private static void MirrorHorizontallyAroundParent()
-{
-    MirrorHorizontally(true);
-}
-Mirror Vertically Around Anchors
-Mirrors the selected RectTransforms vertically around their anchors.
+## Usage
 
-C#
-[MenuItem("Tools/RT_UGUI/Mirror Vertically Around Anchors &'")]
-private static void MirrorVerticallyAroundAnchors()
-{
-    MirrorVertically(false);
-}
-Mirror Vertically Around Parent Center
-Mirrors the selected RectTransforms vertically around the center of their parent RectTransform.
+1. Open the tool via `Tools > ScreenshotsTool` in the Unity Editor menu.
+2. Configure the desired settings in the tool window:
+   - **Use resolution**: Toggle this to specify width and height manually.
+   - **Screenshot Name**: Set the base name for the screenshots.
+   - **Folder Path**: Specify the folder where screenshots will be saved.
+   - **USE PREFIX NUMBER?**: Toggle this to add a numerical prefix to the filenames.
+   - **IsLandScape (Android)**: Toggle this to switch between landscape and portrait modes.
+3. Click **Take Screenshot** to capture a screenshot with the current settings.
+4. Alternatively, switch to using a list of custom resolution names:
+   - Add new resolution names to the list.
+   - Click **TAKE SCREENSHOTS FOR ALL RESOLUTION IN THIS LIST** to capture screenshots for each resolution with a specified delay between captures.
 
-C#
-[MenuItem("Tools/RT_UGUI/Mirror Vertically Around Parent Center &/")]
-private static void MirrorVerticallyAroundParent()
-{
-    MirrorVertically(true);
-}
-License
-This utility is licensed under the Unity Companion License. For more information, see the Unity Companion License.
+## Example
 
-Feel free to modify the content as needed to better suit your project's requirements.
+### Taking a Single Screenshot
+
+1. Set `Width` to `1920` and `Height` to `1080`.
+2. Set `Screenshot Name` to `screenshot`.
+3. Set `Folder Path` to `Screenshots`.
+4. Toggle `USE PREFIX NUMBER?` if you want to prefix filenames with numbers.
+5. Click **Take Screenshot**.
+
+### Taking Multiple Screenshots with Different Resolutions
+
+1. Uncheck `Use resolution`.
+2. Add custom resolution names (e.g., "1920x1080", "1280x720") to the list.
+3. Set the delay between screenshots using the `Delay` field.
+4. Click **TAKE SCREENSHOTS FOR ALL RESOLUTION IN THIS LIST**.
+
+## Script Overview
+
+### Fields
+
+- `_width` and `_height`: Resolution dimensions for the screenshot.
+- `_screenshotName`: Base name for the screenshot file.
+- `_folderPath`: Directory where screenshots are saved.
+- `_useNumber`: Flag to add a numerical prefix to the filename.
+- `_numberOfScreenShot`: Current number for the prefix.
+- `_isLandScape`: Flag for landscape orientation (Android).
+- `_delaySeconds`: Delay between taking screenshots in batch mode.
+- `_listOfNames`: List of custom resolution names.
+- `_newName`: New resolution name to be added to the list.
+
+### Methods
+
+- `OnEnable`: Initializes necessary reflection types and methods for the game view.
+- `ShowWindow`: Opens the tool window in the Unity Editor.
+- `OnGUI`: Renders the tool's UI and handles user input.
+- `TakeScreenshot`: Captures a screenshot with the specified settings.
+- `TakeScreenshotsWithDelay`: Coroutine to capture multiple screenshots with a delay.
+- `SetGameViewSize`: Sets the game view size based on width and height.
+- `SwitchToResolution`: Switches the game view to a specified resolution.
+- `TrySetSize`: Tries to set the game view size to a specified resolution.
+- `SetSizeIndex`: Sets the game view size by index.
+- `FindSize`: Finds the index of a specified resolution in the game view settings.
+- `GetGroup`: Gets the game view size group for the current platform.
+- `GetCurrentGroupType`: Gets the current game view size group type based on the platform.
+
+## Notes
+
+- Ensure the specified folder path exists or will be created by the script.
+- The script uses reflection to access Unity Editor internals, which may break with future Unity updates.
+- The tool supports Android, iOS, and Standalone platforms by default.
+
+## License
+
+This tool is provided as-is with no warranties. You are free to modify and use it in your projects.

@@ -18,7 +18,7 @@ namespace Infrastructure
 
         public void Update()
         {
-            Debug.Log($"=> Game loop update {Time.frameCount}");
+            // Debug.Log($"=> Game loop update {Time.frameCount}");
         }
     }
 }
