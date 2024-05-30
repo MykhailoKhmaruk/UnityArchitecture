@@ -19,7 +19,7 @@ using Unity.EditorCoroutines.Editor; //  EditorCoroutines
 
 namespace EditorUtils
 {
-    public class ScreenshotsTool : EditorWindow
+    public class ScreenshotTool : EditorWindow
     {
         private int _width = 1920;
         private int _height = 1080;
@@ -58,7 +58,7 @@ namespace EditorUtils
         [MenuItem("Tools/Screenshot Tool")]
         public static void ShowWindow()
         {
-            GetWindow<ScreenshotsTool>("ScreenshotsTool");
+            GetWindow<ScreenshotTool>("Screenshot Tool");
         }
 
         private void OnGUI()
@@ -212,10 +212,20 @@ namespace EditorUtils
             {
                 System.IO.Directory.CreateDirectory(_folderPath);
             }
-
-            string filePath = System.IO.Path.Combine(_folderPath,
+            
+            string subfolderPath = System.IO.Path.Combine(_folderPath, nameOfView);
+            if (!System.IO.Directory.Exists(subfolderPath))
+            {
+                System.IO.Directory.CreateDirectory(subfolderPath);
+            }
+            string filePath = System.IO.Path.Combine(subfolderPath,
                 $"{_numberOfScreenShot}_{_screenshotName}_{nameOfView}.png");
             _numberOfScreenShot += 1;
+            
+
+            // string filePath = System.IO.Path.Combine(_folderPath,
+            //     $"{_numberOfScreenShot}_{_screenshotName}_{nameOfView}.png");
+            // _numberOfScreenShot += 1;
             ScreenCapture.CaptureScreenshot(filePath);
 
             Debug.Log($"Screenshot taken and saved to: {filePath}");
@@ -228,16 +238,16 @@ namespace EditorUtils
 
         static void SwitchToResolution(string nameOfResolution)
         {
-            switch (ScreenshotsTool.GetCurrentGroupType())
+            switch (ScreenshotTool.GetCurrentGroupType())
             {
                 default:
-                    ScreenshotsTool.TrySetSize(nameOfResolution);
+                    ScreenshotTool.TrySetSize(nameOfResolution);
                     break;
                 case GameViewSizeGroupType.Android:
-                    ScreenshotsTool.TrySetSize(nameOfResolution);
+                    ScreenshotTool.TrySetSize(nameOfResolution);
                     break;
                 case GameViewSizeGroupType.iOS:
-                    ScreenshotsTool.TrySetSize(nameOfResolution);
+                    ScreenshotTool.TrySetSize(nameOfResolution);
                     break;
             }
         }
@@ -245,16 +255,16 @@ namespace EditorUtils
         static void SwitchToResolution(int width, int height)
         {
             string value = width + "x" + height;
-            switch (ScreenshotsTool.GetCurrentGroupType())
+            switch (ScreenshotTool.GetCurrentGroupType())
             {
                 default:
-                    ScreenshotsTool.TrySetSize(value);
+                    ScreenshotTool.TrySetSize(value);
                     break;
                 case GameViewSizeGroupType.Android:
-                    ScreenshotsTool.TrySetSize(value);
+                    ScreenshotTool.TrySetSize(value);
                     break;
                 case GameViewSizeGroupType.iOS:
-                    ScreenshotsTool.TrySetSize(value);
+                    ScreenshotTool.TrySetSize(value);
                     break;
             }
         }
